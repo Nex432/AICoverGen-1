@@ -52,8 +52,8 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        song_input: CogPath = Input(
-            description="Upload your audio file here.",
+        song_input: str = Input(
+            description="URL of your audio file.",
             default=None,
         ),
         rvc_model: str = Input(
@@ -166,7 +166,7 @@ class Predictor(BasePredictor):
         Runs a single prediction on the model.
 
         Required Parameters:
-            song_input (CogPath): Upload your audio file here.
+            song_input (str): URL of your audio file.
             rvc_model (str): RVC model for a specific voice. Default is "Squidward". If a 'custom_rvc_model_download_url' is provided, this will be automatically set to the name of the downloaded model.
             pitch_change (float): Change pitch of AI vocals in octaves. Set to 0 for no change. Generally, use 1 for male to female conversions and -1 for vice-versa.
 
@@ -221,6 +221,12 @@ class Predictor(BasePredictor):
         else:  # pitch_change == "female-to-male"
             pitch_change = -1
 
+        # Download the song input if it's a URL
+        if song_input.startswith("http://") or song_input.startswith("https://"):
+            song_input_path = os.path.join("/tmp", os.path.basename(song_input))
+            urllib.request.urlretrieve(song_input, song_input_path)
+            song_input = song_input_path
+
         args = Namespace(
             song_input=str(song_input),
             rvc_dirname=(model_dir_name := rvc_model),
@@ -237,10 +243,10 @@ class Predictor(BasePredictor):
             inst_vol=instrumental_volume_change,
             pitch_change_all=pitch_change_all,
             reverb_size=reverb_size,
-            reverb_wetness=reverb_wetness,
-            reverb_dryness=reverb_dryness,
-            reverb_damping=reverb_damping,
-            output_format=output_format,
+            reverb_wet=args.reverb_wetness,
+            reverb_dry=args.reverb_dryness,
+            reverb_damping=args.reverb_damping,
+            output_format=args.output_format,
         )
 
         rvc_dirname = args.rvc_dirname
